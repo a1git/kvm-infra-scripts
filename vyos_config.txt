@@ -1,0 +1,134 @@
+## Sashi Dahal 
+## For context and background, please visit: https://www.openstackfaq.com/openstack-liberty-private-cloud-howto/
+##
+## These are actual VYOS commands
+
+
+## setup your gateway 
+set system gateway-address 'XX.XX.XX.1'
+
+## setup your public IP addresses
+
+set interfaces ethernet eth0 address 'XX.XX.XX.AA/24'
+set interfaces ethernet eth0 address 'XX.XX.XX.BB/24'
+set interfaces ethernet eth0 duplex 'auto'
+set interfaces ethernet eth0 hw-id '52:54:00:a0:c1:9c'
+set interfaces ethernet eth0 smp_affinity 'auto'
+set interfaces ethernet eth0 speed 'auto'
+
+## this is the pxe/dhcp default gateway address
+
+set interfaces ethernet eth1 address '10.11.12.1/22'
+set interfaces ethernet eth1 duplex 'auto'
+set interfaces ethernet eth1 hw-id '52:54:00:ea:f9:48'
+set interfaces ethernet eth1 smp_affinity 'auto'
+set interfaces ethernet eth1 speed 'auto'
+
+## openstack-ansible  management ip range 
+set interfaces ethernet eth2 address '172.29.236.1/22'
+set interfaces ethernet eth2 duplex 'auto'
+set interfaces ethernet eth2 hw-id '52:54:00:31:20:a5'
+set interfaces ethernet eth2 smp_affinity 'auto'
+set interfaces ethernet eth2 speed 'auto'
+
+## openstack-ansible storage ip range
+set interfaces ethernet eth3 address '172.29.244.1/22'
+set interfaces ethernet eth3 duplex 'auto'
+set interfaces ethernet eth3 hw-id '52:54:00:0c:e2:27'
+set interfaces ethernet eth3 smp_affinity 'auto'
+set interfaces ethernet eth3 speed 'auto'
+
+## openstack-ansible vlan interface 
+set interfaces ethernet eth4 duplex 'auto'
+set interfaces ethernet eth4 hw-id '52:54:00:79:d6:ce'
+set interfaces ethernet eth4 smp_affinity 'auto'
+set interfaces ethernet eth4 speed 'auto'
+
+## floating-ip VLANs and IP range
+set interfaces ethernet eth4 vif 101 address '192.168.101.1/24'
+set interfaces ethernet eth4 vif 102 address '192.168.102.1/24'
+set interfaces ethernet eth4 vif 103 address '192.168.103.1/24'
+set interfaces ethernet eth4 vif 104 address '192.168.104.1/24'
+set interfaces ethernet eth4 vif 105 address '192.168.105.1/24'
+
+## direct attached/dhcp  VLANs and IP range
+set interfaces ethernet eth4 vif 201 address '192.168.201.1/24'
+set interfaces ethernet eth4 vif 202 address '192.168.202.1/24'
+set interfaces ethernet eth4 vif 203 address '192.168.203.1/24'
+set interfaces ethernet eth4 vif 204 address '192.168.204.1/24'
+set interfaces ethernet eth4 vif 205 address '192.168.205.1/24'
+
+## openstack-ansible vxlan ip range 
+set interfaces ethernet eth5 address '172.29.240.1/22'
+set interfaces ethernet eth5 duplex 'auto'
+set interfaces ethernet eth5 hw-id '52:54:00:2b:f0:cc'
+set interfaces ethernet eth5 smp_affinity 'auto'
+set interfaces ethernet eth5 speed 'auto'
+
+set interfaces loopback 'lo'
+
+## 1:1 NAT between internal and public IP 
+set nat destination rule 11 destination address 'XX.XX.XX.BB'
+set nat destination rule 11 inbound-interface 'eth0'
+set nat destination rule 11 translation address '10.11.12.3'
+set nat source rule 11 outbound-interface 'eth0'
+set nat source rule 11 source address '10.11.12.3'
+set nat source rule 11 translation address 'XX.XX.XX.BB'
+
+# NAT for the pxe range
+set nat source rule 100 outbound-interface 'eth0'
+set nat source rule 100 protocol 'all'
+set nat source rule 100 source address '10.11.12.0/22'
+set nat source rule 100 translation address 'masquerade'
+
+# NAT for the floating-ip range
+set nat source rule 101 outbound-interface 'eth0'
+set nat source rule 101 protocol 'all'
+set nat source rule 101 source address '192.168.101.0/24'
+set nat source rule 101 translation address 'masquerade'
+
+# NAT for the direct-attached-dhcp ip range 
+set nat source rule 201 outbound-interface 'eth0'
+set nat source rule 201 protocol 'all'
+set nat source rule 201 source address '192.168.201.0/24'
+set nat source rule 201 translation address 'masquerade'
+
+# VYOS acts as a DHCP server for the initial boot 
+set service dhcp-server disabled 'false'
+set service dhcp-server shared-network-name pxe-pool authoritative 'disable'
+set service dhcp-server shared-network-name pxe-pool subnet 10.11.12.0/22 default-router '10.11.12.1'
+set service dhcp-server shared-network-name pxe-pool subnet 10.11.12.0/22 dns-server '8.8.8.8'
+set service dhcp-server shared-network-name pxe-pool subnet 10.11.12.0/22 lease '86400'
+set service dhcp-server shared-network-name pxe-pool subnet 10.11.12.0/22 start 10.11.12.11 stop '10.11.12.99'
+
+# VYOS also acts as a DNS server ..
+set service dns forwarding listen-on 'eth1'
+set service dns forwarding name-server '8.8.8.8'
+set service dns forwarding name-server '8.8.4.4'
+
+set service ssh port '22'
+
+set system config-management commit-revisions '20'
+set system console device ttyS0 speed '9600'
+
+
+set system host-name 'vyos'
+
+set system login user vyos level 'admin'
+set system name-server '8.8.8.8'
+set system ntp server '0.pool.ntp.org'
+set system ntp server '1.pool.ntp.org'
+set system ntp server '2.pool.ntp.org'
+
+set system package auto-sync '1'
+set system package repository community components 'main'
+set system package repository community distribution 'helium'
+set system package repository community password ''
+set system package repository community url 'http://packages.vyos.net/vyos'
+set system package repository community username ''
+
+set system syslog global facility all level 'notice'
+set system syslog global facility protocols level 'debug'
+
+set system time-zone 'UTC'
+
