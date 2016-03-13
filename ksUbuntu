@@ -1,0 +1,84 @@
+# Ubuntu Auto Install KickStart File
+# Shashi Dahal 
+# 
+
+lang en_US
+langsupport en_US
+keyboard us
+timezone Europe/Amsterdam
+rootpw admin0.#
+user admin0 --fullname "admin0" --password admin0.$
+auth  --useshadow  --enablemd5
+
+text
+install
+network --bootproto=dhcp
+url --url http://10.11.12.2/ubuntu/
+reboot
+
+bootloader --location=mbr
+zerombr yes
+clearpart --all --initlabel
+
+
+part /boot --fstype ext4 --size 250 --asprimary
+part pv.01 --size=1 --grow --asprimary
+volgroup cloud pv.01
+logvol swap --fstype swap --vgname=cloud --size=2048   --name=swap
+
+## i create 3 extra volumes, so that the same could be used to test swift, ceph etc
+
+logvol /disk1 --fstype ext4 --vgname=cloud --size=2048 --name=disk1
+logvol /disk2 --fstype ext4 --vgname=cloud --size=2048 --name=disk2
+logvol /disk3 --fstype ext4 --vgname=cloud --size=2048 --name=disk3
+logvol /    --fstype ext4 --vgname=cloud --size=20480  --name=root --grow
+
+preseed partman-lvm/confirm_nooverwrite         boolean true
+preseed partman-auto-lvm/no_boot                boolean true
+preseed base-installer/install-recommends       boolean false
+
+d-i live-installer/net-image string http://10.11.12.2/ubuntu/install/filesystem.squashfs
+
+
+firewall --disabled
+skipx
+
+%packages
+
+%post
+
+mkdir /root/.ssh/
+cat << EOF >> /root/.ssh/authorized_keys
+ssh-rsa shashi@
+ssh-rsa root@cloud
+ssh-rsa root@deploy
+EOF
+
+cat << EOF > /etc/apt/sources.list
+deb http://nl.archive.ubuntu.com/ubuntu/ trusty main restricted
+deb-src http://nl.archive.ubuntu.com/ubuntu/ trusty main restricted
+deb http://nl.archive.ubuntu.com/ubuntu/ trusty-updates main restricted
+deb-src http://nl.archive.ubuntu.com/ubuntu/ trusty-updates main restricted
+deb http://nl.archive.ubuntu.com/ubuntu/ trusty universe
+deb-src http://nl.archive.ubuntu.com/ubuntu/ trusty universe
+deb http://nl.archive.ubuntu.com/ubuntu/ trusty-updates universe
+deb-src http://nl.archive.ubuntu.com/ubuntu/ trusty-updates universe
+deb http://nl.archive.ubuntu.com/ubuntu/ trusty multiverse
+deb-src http://nl.archive.ubuntu.com/ubuntu/ trusty multiverse
+deb http://nl.archive.ubuntu.com/ubuntu/ trusty-updates multiverse
+deb-src http://nl.archive.ubuntu.com/ubuntu/ trusty-updates multiverse
+deb http://nl.archive.ubuntu.com/ubuntu/ trusty-backports main restricted universe multiverse
+deb-src http://nl.archive.ubuntu.com/ubuntu/ trusty-backports main restricted universe multiverse
+deb http://security.ubuntu.com/ubuntu trusty-security main restricted
+deb-src http://security.ubuntu.com/ubuntu trusty-security main restricted
+deb http://security.ubuntu.com/ubuntu trusty-security universe
+deb-src http://security.ubuntu.com/ubuntu trusty-security universe
+deb http://security.ubuntu.com/ubuntu trusty-security multiverse
+deb-src http://security.ubuntu.com/ubuntu trusty-security multiverse
+EOF
+
+apt-get update
+apt-get install -y openssh-server curl vim tcpdump wget lvm2 htop lldpd python curl bridge-utils vlan ifenslave lsof ntp ntpdate sudo
+apt-get -qq -y autoremove
+apt-get clean
+update-initramfs -u -v -k all
