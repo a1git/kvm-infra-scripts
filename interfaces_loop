@@ -1,0 +1,53 @@
+# Network
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet dhcp
+
+auto eth1
+iface eth1 inet manual
+
+auto eth2
+iface eth2 inet manual
+
+auto eth3
+iface eth3 inet manual
+
+auto eth4
+iface eth4 inet manual
+
+auto br-mgmt
+iface br-mgmt inet static
+ bridge_stp off
+ bridge_waitport 0
+ bridge_fd 0
+ bridge_ports eth1
+ address 172.29.236.IPADDR
+ netmask 255.255.252.0
+
+auto br-vxlan
+iface br-vxlan inet static
+ bridge_stp off
+ bridge_waitport 0
+ bridge_fd 0
+ bridge_ports eth4
+ address 172.29.240.IPADDR
+ netmask 255.255.252.0
+
+auto br-storage
+iface br-storage inet static
+ bridge_stp off
+ bridge_waitport 0
+ bridge_fd 0
+ bridge_ports eth2
+ address 172.29.244.IPADDR
+ netmask 255.255.252.0
+
+
+auto br-vlan
+iface br-vlan inet manual
+ bridge_stp off
+ bridge_waitport 0
+ bridge_fd 0
+ bridge_ports eth3

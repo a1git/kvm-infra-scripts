@@ -1,0 +1,6 @@
+#!/bin/bash
+# Shashi Dahal
+
+hostname HOST
+echo HOST  > /etc/hostname
+perl -pi -e 's/kickseed/HOST/g' /etc/hosts
