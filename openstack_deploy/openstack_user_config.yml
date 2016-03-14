@@ -1,0 +1,135 @@
+---
+ cidr_networks:
+   container: 172.29.236.0/22
+   tunnel: 172.29.240.0/22
+   storage: 172.29.244.0/22
+
+ used_ips:
+  - "172.29.236.1,172.29.236.50"
+  - "172.29.240.1,172.29.240.50"
+  - "172.29.244.1,172.29.244.50"
+
+
+ global_overrides:
+  internal_lb_vip_address: cloud101int.admin0.com
+  external_lb_vip_address: cloud101.admin0.com
+  management_bridge: br-mgmt
+  tunnel_bridge: br-vxlan
+
+  provider_networks:
+    - network:
+        group_binds:
+          - all_containers
+          - hosts
+        type: "raw"
+        container_bridge: "br-mgmt"
+        container_interface: "eth1"
+        container_type: "veth"
+        ip_from_q: "container"
+        is_container_address: true
+        is_ssh_address: true
+    - network:
+        group_binds:
+          - glance_api
+          - cinder_api
+          - cinder_volume
+          - nova_compute
+          # Uncomment the next line if using swift with a storage network.
+          # - swift_proxy
+        type: "raw"
+        container_bridge: "br-storage"
+        container_type: "veth"
+        container_interface: "eth2"
+        container_mtu: "9000"
+        ip_from_q: "storage"
+    - network:
+        group_binds:
+          - neutron_linuxbridge_agent
+        container_bridge: "br-vxlan"
+        container_type: "veth"
+        container_interface: "eth10"
+        container_mtu: "9000"
+        ip_from_q: "tunnel"
+        type: "vxlan"
+        range: "1:1000"
+        net_name: "vxlan"
+    - network:
+        group_binds:
+          - neutron_linuxbridge_agent
+        container_bridge: "br-vlan"
+        container_type: "veth"
+        container_interface: "eth14"
+        type: "vlan"
+        range: "100:300"
+        net_name: "vlan"
+    - network:
+        group_binds:
+          - neutron_linuxbridge_agent
+        container_bridge: "br-vlan"
+        container_type: "veth"
+        container_interface: "eth12"
+        host_bind_override: "eth0"
+        type: "flat"
+        net_name: "flat"
+
+ haproxy_hosts:
+   c14:
+     ip: 172.29.236.14
+   c15:
+     ip: 172.29.236.15
+
+ data_hosts:
+   c11:
+     ip: 172.29.236.11
+   c12:
+     ip: 172.29.236.12
+
+ shared-infra_hosts:
+   c14:
+     ip: 172.29.236.14
+   c15:
+     ip: 172.29.236.15
+
+ repo-infra_hosts:
+   c14:
+     ip: 172.29.236.14
+   c15:
+     ip: 172.29.236.15
+
+ os-infra_hosts:
+   c14:
+     ip: 172.29.236.14
+   c15:
+     ip: 172.29.236.15
+
+ identity_hosts:
+   c14:
+     ip: 172.29.236.14
+   c15:
+     ip: 172.29.236.15
+
+ compute_hosts:
+   c17:
+     ip: 172.29.236.17
+   c18:
+     ip: 172.29.236.18
+
+ storage-infra_hosts:
+   c14:
+     ip: 172.29.236.14
+   c15:
+     ip: 172.29.236.15
+
+ storage_hosts:
+   c20:
+     ip: 172.29.236.20
+
+ log_hosts:
+   c13:
+     ip: 172.29.236.13
+
+ neutron_plugin_base:
+  - neutron.services.l3_router.l3_router_plugin.L3RouterPlugin
+  - neutron.services.metering.metering_plugin.MeteringPlugin
+  - neutron_lbaas.services.loadbalancer.plugin.LoadBalancerPlugin
+
